@@ -70,6 +70,19 @@ It helps users perform daily file and image tasks directly in the browser withou
 - **Django REST Framework**
 - **Gunicorn**
 
+- ## 🏷️ Topics
+
+⚛️ Next.js  
+⚛️ React  
+🐍 Django  
+🗄️ PostgreSQL  
+🎨 Tailwind CSS  
+🧩 Full Stack Development  
+📄 PDF Tools  
+🖼️ Image Processing  
+🧰 Web Tools  
+🚀 SaaS Project
+
 ### Database
 - **PostgreSQL**
 
