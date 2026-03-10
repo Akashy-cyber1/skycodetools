@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -19,25 +18,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 # This allows storing sensitive configuration outside the codebase
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+# Only load .env if it exists (for local development)
+env_path = BASE_DIR / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# =============================================================================
+# SECURITY SETTINGS - CRITICAL FOR PRODUCTION
+# =============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Use environment variable in production, fallback to a strong key for development
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-8d-j0h%dqb03p*+34c3g_b2sg$yub*8jo&ia2suyk&+2kw(%pr')
+# Use environment variable in production, MUST be set for production
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+
+if not SECRET_KEY:
+    raise ValueError(
+        "DJANGO_SECRET_KEY environment variable is not set! "
+        "For production, you MUST set a strong secret key."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Use environment variable to control DEBUG mode
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # ALLOWED_HOSTS configuration
 # For development: localhost and 127.0.0.1
 # For production: configure via ALLOWED_HOSTS environment variable (comma-separated)
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+# Example: ALLOWED_HOSTS=example.com,www.example.com,backend.onrender.com
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
+if ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -98,16 +111,30 @@ WSGI_APPLICATION = 'skycodetools.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'skycodetoolsdb',
-        'USER': 'postgres',
-        'PASSWORD': 'AkashyRakhi7678@',
-        'HOST': 'localhost',
-        'PORT': '5432',
+# Support for DATABASE_URL environment variable (Render, Heroku, etc.)
+# Format: postgres://user:password@host:port/dbname
+import dj_database_url
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Production: Use DATABASE_URL from Render PostgreSQL
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    # Local development: Use SQLite for simplicity
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Password validation
@@ -155,7 +182,42 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Example: STATICFILES_DIRS = [BASE_DIR / 'static',]
 STATICFILES_DIRS = []
 
-CORS_ALLOW_ALL_ORIGINS = True
+# =============================================================================
+# CORS SETTINGS
+# =============================================================================
+# Configure CORS for production deployment
+
+# Get allowed origins from environment variable (comma-separated)
+# Example: CORS_ALLOWED_ORIGINS=https://example.com,https://www.example.com
+CORS_ALLOWED_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if CORS_ALLOWED_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    # Development defaults
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+
+# CSRF trusted origins (for production, include your Vercel domain)
+CSRF_TRUSTED_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if CSRF_TRUSTED_ORIGINS_ENV:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    # Development defaults
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+
+# Allow credentials (cookies, authorization headers)
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow all origins in development, use specific origins in production
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
 
 
 # =============================================================================
