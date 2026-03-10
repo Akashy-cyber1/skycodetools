@@ -146,6 +146,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# STATIC_ROOT: The directory where Django will collect static files for deployment
+# Run: python manage.py collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# STATICFILES_DIRS: Additional directories where Django looks for static files
+# Use this for project-level static files (not in apps)
+# Example: STATICFILES_DIRS = [BASE_DIR / 'static',]
+STATICFILES_DIRS = []
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 
