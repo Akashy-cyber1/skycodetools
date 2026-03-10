@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -113,7 +113,7 @@ export default function ImageToPDFPage() {
       });
 
       // Send API request
-      const response = await axios.post("/api/image-to-pdf", formData, {
+      const response = await API.post("/image-to-pdf/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -132,7 +132,7 @@ export default function ImageToPDFPage() {
       setProgress(100);
     } catch (err) {
       console.error("Error converting to PDF:", err);
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         if (err.response) {
           setError(`Server error: ${err.response.status}. Please try again.`);
         } else if (err.request) {

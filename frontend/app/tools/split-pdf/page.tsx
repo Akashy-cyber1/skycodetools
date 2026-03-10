@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -156,7 +156,7 @@ export default function SplitPDFPage() {
       formData.append("page_ranges", pageRanges);
 
       // Send API request
-      const response = await axios.post("/api/split-pdf", formData, {
+      const response = await API.post("/split-pdf/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -178,7 +178,7 @@ export default function SplitPDFPage() {
       setProgress(100);
     } catch (err) {
       console.error("Error splitting PDF:", err);
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         if (err.response) {
           setError(`Server error: ${err.response.status}. Please try again.`);
         } else if (err.request) {

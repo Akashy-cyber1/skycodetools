@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -107,7 +107,7 @@ export default function BackgroundRemoverPage() {
       formData.append("file", originalImage.file);
 
       // Send API request to internal backend
-      const response = await axios.post("/api/background-remover", formData, {
+      const response = await API.post("/background-remover/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -119,7 +119,7 @@ export default function BackgroundRemoverPage() {
       setProcessedImage(processedUrl);
     } catch (err) {
       console.error("Error removing background:", err);
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         if (err.response) {
           // Try to parse error message from response
           const status = err.response.status;

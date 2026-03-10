@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -118,7 +118,7 @@ export default function MergePDFPage() {
       });
 
       // Send API request
-      const response = await axios.post("/api/merge-pdf", formData, {
+      const response = await API.post("/merge-pdf/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -137,7 +137,7 @@ export default function MergePDFPage() {
       setProgress(100);
     } catch (err) {
       console.error("Error merging PDFs:", err);
-      if (axios.isAxiosError(err)) {
+      if (isAxiosError(err)) {
         if (err.response) {
           setError(`Server error: ${err.response.status}. Please try again.`);
         } else if (err.request) {
