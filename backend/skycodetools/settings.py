@@ -17,9 +17,11 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
-# This allows storing sensitive configuration outside the codebase
-# Only load .env if it exists (for local development)
-env_path = BASE_DIR / '.env'
+# settings.py is at: backend/skycodetools/settings.py
+# Path(__file__).resolve() = full path to settings.py
+# .parent = backend/skycodetools/
+# .parent = backend/ (where .env file is!)
+env_path = Path(__file__).resolve().parent.parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
 
@@ -50,7 +52,7 @@ ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
 if ALLOWED_HOSTS_ENV:
     ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1','.onrender.com']
 
 
 # Application definition
@@ -74,6 +76,16 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'corsheaders',
+    
+    # Local apps - Phase A
+    'core',           # Abstract models and utilities
+    'site_settings',  # Site settings (renamed from 'settings' to avoid Python conflict)
+    'contact',        # Contact form submissions
+    'feedback',       # User feedback
+    'newsletter',     # Newsletter subscribers
+    'blog',           # Blog posts and categories
+    
+    # Existing app
     'tools',
 ]
 
