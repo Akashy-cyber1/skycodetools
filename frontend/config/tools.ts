@@ -40,7 +40,10 @@ export const tools: ToolConfig[] = [
       'Drag and drop support',
       'No registration required',
     ],
+    featured: true,
+    route: '/tools/image-to-pdf',
   },
+
   {
     id: 'merge-pdf',
     slug: 'merge-pdf',
@@ -70,7 +73,10 @@ export const tools: ToolConfig[] = [
       'Preserve original quality',
       'Secure file processing',
     ],
+    featured: true,
+    route: '/tools/merge-pdf',
   },
+
   {
     id: 'split-pdf',
     slug: 'split-pdf',
@@ -100,7 +106,10 @@ export const tools: ToolConfig[] = [
       'Preview before download',
       'Secure processing',
     ],
+    featured: true,
+    route: '/tools/split-pdf',
   },
+
   {
     id: 'image-compressor',
     slug: 'image-compressor',
@@ -130,7 +139,10 @@ export const tools: ToolConfig[] = [
       'Multiple format support',
       'Quality control',
     ],
+    featured: true,
+    route: '/tools/image-compressor',
   },
+
   {
     id: 'background-remover',
     slug: 'background-remover',
@@ -160,7 +172,43 @@ export const tools: ToolConfig[] = [
       'High-quality output',
       'Supports multiple formats',
     ],
+    featured: true,
+    route: '/tools/background-remover',
   },
+
+ {
+  id: 'pdf-to-word',
+  slug: 'pdf-to-word',
+  name: 'PDF to Word',
+  description: 'Convert PDF documents into editable Word files quickly and easily.',
+  shortDescription: 'Convert PDF to Word',
+  icon: 'FileText',
+  color: {
+    from: 'sky-500',
+    to: 'blue-500',
+    css: 'from-sky-500 to-blue-500',
+  },
+  category: 'document',
+  apiEndpoint: '/api/pdf-to-word/',
+  acceptedFiles: ['application/pdf'],
+  maxFiles: 5,
+  maxFileSizeMB: 20,
+  seo: {
+    title: 'PDF to Word - Free PDF Converter | SkyCode Tools',
+    description: 'Convert PDF files to editable Word documents online. Fast and simple PDF to DOCX conversion.',
+    keywords: ['pdf to word', 'pdf to docx', 'convert pdf to word', 'editable word file', 'pdf converter'],
+    canonical: 'https://skycode.tools/tools/pdf-to-word',
+  },
+  features: [
+    'Editable Word output',
+    'Fast conversion',
+    'Simple upload process',
+    'Supports standard PDF files',
+  ],
+  featured: false,
+  route: '/tools/pdf-to-word',
+},
+
 ];
 
 // Helper functions
@@ -179,4 +227,13 @@ export const getToolsByCategory = (category: ToolCategory): ToolConfig[] => {
 export const getAllToolSlugs = (): string[] => {
   return tools.map(tool => tool.slug);
 };
+
+export const getFeaturedTools = (): ToolConfig[] => {
+  return tools.filter(tool => tool.featured === true);
+};
+
+export const getAllCategories = (): ToolCategory[] => {
+  return Array.from(new Set(tools.map(tool => tool.category))) as ToolCategory[];
+};
+
 

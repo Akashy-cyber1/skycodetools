@@ -52,16 +52,23 @@ class ToolViewSet(viewsets.ModelViewSet):
 def image_to_pdf(request):
     """
     Convert uploaded images to PDF.
-    Accepts: POST with 'images' (multiple image files)
-    Returns: JSON success/error response
+    Accepts: POST with 'images' or 'files' (multiple image files)
+    Returns: PDF blob on success
     """
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.utils import ImageReader
+    from reportlab.pdfgen import canvas
+    import io
+    from PIL import Image
+    
     if request.method != 'POST':
         return Response(
             {"success": False, "error": "Method not allowed. Use POST."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
     
-    # Get uploaded files
+    # Get uploaded files - try multiple field names
     files = request.FILES.getlist('images')
     files += request.FILES.getlist('files')
     files += request.FILES.getlist('image')
@@ -83,14 +90,69 @@ def image_to_pdf(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    # Log the request (actual PDF conversion would be implemented here)
     logger.info(f"image_to_pdf: Processing {len(files)} images")
     
-    # For now, return success response (actual conversion logic would go here)
-    return Response({
-        "success": True,
-        "message": f"Image to PDF conversion started for {len(files)} image(s)"
-    }, status=status.HTTP_200_OK)
+    try:
+        # Create PDF in memory
+        pdf_buffer = io.BytesIO()
+        c = canvas.Canvas(pdf_buffer, pagesize=letter)
+        width, height = letter
+        
+        for image_file in files:
+            # Reset file position after any previous reads
+            image_file.seek(0)
+            
+            # Open image to get dimensions
+            img = Image.open(image_file)
+            img_width, img_height = img.size
+            
+            # Calculate aspect ratio to fit page
+            page_width, page_height = width - 72 * 2, height - 72 * 2  # 1 inch margins
+            img_aspect = img_height / img_width
+            page_aspect = page_height / page_width
+            
+            if img_aspect > page_aspect:
+                # Image is taller than page aspect
+                draw_height = page_height
+                draw_width = draw_height / img_aspect
+            else:
+                # Image is wider than page aspect
+                draw_width = page_width
+                draw_height = draw_width * img_aspect
+            
+            # Center on page
+            x_offset = (width - draw_width) / 2
+            y_offset = (height - draw_height) / 2
+            
+            # Reset to read image data
+            image_file.seek(0)
+            img_data = image_file.read()
+            
+            # Draw image on PDF
+            c.drawImage(
+                ImageReader(io.BytesIO(img_data)),
+                x_offset, y_offset,
+                width=draw_width,
+                height=draw_height
+            )
+            c.showPage()  # New page for each image
+        
+        c.save()
+        pdf_buffer.seek(0)
+        
+        logger.info(f"image_to_pdf: Successfully created PDF with {len(files)} pages")
+        
+        # Return PDF as response
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="converted.pdf"'
+        return response
+        
+    except Exception as e:
+        logger.exception(f"image_to_pdf: Error creating PDF - {str(e)}")
+        return Response(
+            {"success": False, "error": f"Failed to create PDF: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])

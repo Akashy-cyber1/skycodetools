@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -112,36 +111,39 @@ export default function ImageToPDFPage() {
         formData.append("files", image.file);
       });
 
-      // Send API request
-      const response = await API.post("/image-to-pdf/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        responseType: "blob",
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-          }
-        },
+      // Use fetch to call the Next.js proxy route (same origin)
+      // This proxies to Django backend at http://127.0.0.1:8000/api/image-to-pdf/
+      const response = await fetch("/api/image-to-pdf/", {
+        method: "POST",
+        body: formData,
       });
 
-      // Create blob URL for the PDF
-      const pdfBlob = new Blob([response.data], { type: "application/pdf" });
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = `Server error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Response might not be JSON
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
       const pdfUrl = URL.createObjectURL(pdfBlob);
       setConvertedPdf(pdfUrl);
       setProgress(100);
     } catch (err) {
       console.error("Error converting to PDF:", err);
-      if (isAxiosError(err)) {
-        if (err.response) {
-          setError(`Server error: ${err.response.status}. Please try again.`);
-        } else if (err.request) {
-          setError("Network error. Please check your connection and try again.");
-        } else {
-          setError("Failed to convert images to PDF. Please try again.");
-        }
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      
+      // Check for backend unavailable error
+      if (errorMessage.includes("fetch") || errorMessage.includes("ECONNREFUSED") || errorMessage.includes("Failed to fetch")) {
+        setError("Backend server is not running. Please start the Django server or contact support.");
       } else {
-        setError("An unexpected error occurred. Please try again.");
+        setError(`Failed to convert images to PDF: ${errorMessage}`);
       }
     } finally {
       setIsConverting(false);

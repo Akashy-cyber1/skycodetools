@@ -64,6 +64,8 @@ export interface ToolConfig {
   maxFileSizeMB: number;
   seo: ToolSeo;
   features: string[];
+  featured?: boolean;
+  route?: string;
 }
 
 // File validation interface

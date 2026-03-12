@@ -34,3 +34,7 @@ export type {
   InputProps,
 } from './ui';
 
+// Blog types
+export type { BlogPost, BlogSeo, BlogCategory, BlogSlugParams } from './blog';
+
+
