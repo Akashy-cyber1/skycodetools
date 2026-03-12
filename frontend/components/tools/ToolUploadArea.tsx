@@ -250,6 +250,7 @@ export function ToolUploadArea({
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    </div>
                   <p className="text-xs text-slate-400 mt-2 truncate">{file.name}</p>
                 </motion.div>
               ))}

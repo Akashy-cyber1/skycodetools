@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { getPostBySlug, getAllPosts } from '@/config/blog';
+import { fetchPostBySlug } from '@/lib/api/blog';
 import type { BlogSlugParams } from '@/types/blog';
 import Link from 'next/link';
 import { Calendar, Tag, Folder, ChevronLeft } from 'lucide-react';
+
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>
@@ -19,7 +21,13 @@ export function generateStaticParams() {
 // Dynamic metadata
 export async function generateMetadata({ params }: BlogSlugParams): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  let post;
+  
+  try {
+    post = await fetchPostBySlug(slug);
+  } catch {
+    post = getPostBySlug(slug);
+  }
   
   if (!post) {
     return {
@@ -34,9 +42,17 @@ export async function generateMetadata({ params }: BlogSlugParams): Promise<Meta
   };
 }
 
+
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  let post;
+  
+  try {
+    post = await fetchPostBySlug(slug);
+  } catch (error) {
+    console.warn('API fetch failed for post, using static:', error);
+    post = getPostBySlug(slug);
+  }
 
   if (!post) {
     notFound();
@@ -47,6 +63,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     month: 'long',
     day: 'numeric',
   });
+
 
   return (
     <div className="min-h-screen bg-[#030712] text-white">

@@ -145,6 +145,11 @@ class BlogPost(TimestampableModel):
         default=False,
         help_text="Feature this post on the homepage"
     )
+    seo = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="SEO metadata: {'metaTitle': str, 'metaDescription': str}"
+    )
     
     class Meta:
         verbose_name = 'Blog Post'

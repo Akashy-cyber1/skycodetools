@@ -55,6 +55,7 @@ export function FeatureSection({
             <p className="text-slate-400 max-w-2xl mx-auto">{description}</p>
           )}
         </motion.div>
+        </div>
 
         {/* Features Grid */}
         <div className={`grid ${gridCols[columns]} gap-6`}>
