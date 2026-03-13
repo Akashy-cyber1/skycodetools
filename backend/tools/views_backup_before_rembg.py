@@ -1,5 +1,4 @@
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -9,9 +8,22 @@ from .serializers import ToolSerializer
 from io import BytesIO
 from django.conf import settings
 from PIL import Image
-from rembg import remove
 import PyPDF2
 import logging
+
+# from PIL import Image
+# from django.http import JsonResponse, HttpResponse
+# from rest_framework import viewsets
+# from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+# from rest_framework.decorators import api_view, permission_classes, authentication_classes
+# from rest_framework.response import Response
+# from rest_framework import status
+# from .models import Tool
+# from .serializers import ToolSerializer
+# from io import BytesIO
+# from django.conf import settings
+# from PyPDF2 import PdfReader, PdfWriter, PdfMerger
+# import logging
 
 logger = logging.getLogger(__name__)
 
@@ -156,14 +168,10 @@ def image_to_pdf(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def merge_pdf(request):
-    """
-    Merge PDF files.
-    """
     if request.method != 'POST':
         return Response(
             {"success": False, "error": "Method not allowed. Use POST."},
@@ -210,13 +218,59 @@ def merge_pdf(request):
             {"success": False, "error": f"Merge failed: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+# @api_view(["POST"])
+# @authentication_classes([])
+# @permission_classes([AllowAny])
+# def merge_pdf(request):
+#     """
+#     Merge multiple PDF files into one.
+#     Accepts: POST with 'pdfs' (multiple PDF files)
+#     Returns: JSON success/error response
+#     """
+#     if request.method != 'POST':
+#         return Response(
+#             {"success": False, "error": "Method not allowed. Use POST."},
+#             status=status.HTTP_405_METHOD_NOT_ALLOWED
+#         )
+    
+#     # Get uploaded files
+#     # FE priority first
+#     files = request.FILES.getlist('files') or request.FILES.getlist('pdfs') or request.FILES.getlist('pdf')
+    
+#     # Validate files
+#     if not files:
+#         return Response(
+#             {"success": False, "error": "No files uploaded"},
+#             status=status.HTTP_400_BAD_REQUEST
+#         )
+    
+#     # Validate file types
+#     allowed_pdf_type = 'application/pdf'
+#     for f in files:
+#         if f.content_type != allowed_pdf_type:
+#             return Response(
+#                 {"success": False, "error": f"Invalid file type: {f.content_type}. Only PDF files allowed."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+    
+#     # Log the request (actual PDF merge would be implemented here)
+#     logger.info(f"merge_pdf: Processing {len(files)} PDF files")
+    
+#     # For now, return success response (actual merge logic would go here)
+#     return Response({
+#         "success": True,
+#         "message": f"Merge PDF endpoint working. Processing {len(files)} PDF file(s)"
+#     }, status=status.HTTP_200_OK)
+
 
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def split_pdf(request):
     """
-    Split PDF file.
+    Split a PDF file into multiple pages/files.
+    Accepts: POST with 'pdf' (single PDF file)
+    Returns: JSON success/error response
     """
     if request.method != 'POST':
         return Response(
@@ -224,90 +278,46 @@ def split_pdf(request):
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
     
-    pdf_file = request.FILES.get('pdf') or request.FILES.get('file')
-    if isinstance(pdf_file, list):
-        pdf_file = pdf_file[0] if pdf_file else None
+    # Get uploaded file
+    pdf_file = request.FILES.get('pdf')
+    if not pdf_file:
+        pdf_file = request.FILES.get('file')
+    if not pdf_file:
+        pdf_file = request.FILES.get('files')
+        if pdf_file and isinstance(pdf_file, list):
+            pdf_file = pdf_file[0] if pdf_file else None
     
+    # Validate file
     if not pdf_file:
         return Response(
             {"success": False, "error": "No PDF file uploaded"},
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    # Validate file type
     if pdf_file.content_type != 'application/pdf':
         return Response(
-            {"success": False, "error": "Invalid file type. Only PDF allowed."},
+            {"success": False, "error": f"Invalid file type: {pdf_file.content_type}. Only PDF files allowed."},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    logger.info(f"split_pdf: Processing {pdf_file.name}")
-
-    # Parse page ranges
-    page_ranges = request.POST.get('page_ranges', '').strip()
-    if not page_ranges:
-        return Response(
-            {"success": False, "error": "Page ranges required (e.g., '1', '1-3,5')"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
+    # Log the request (actual PDF split would be implemented here)
+    logger.info(f"split_pdf: Processing PDF file: {pdf_file.name}")
+    
     try:
         pdf_file.seek(0)
         reader = PyPDF2.PdfReader(pdf_file)
-        total_pages = len(reader.pages)
-        if total_pages == 0:
-            return Response(
-                {"success": False, "error": "PDF has no pages"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Parse page ranges: 1, 1-3, 2,4,6, 1-3,5,7-9
-        selected_pages = set()
-        range_parts = page_ranges.split(',')
-        for part in range_parts:
-            part = part.strip()
-            if not part:
-                continue
-            if '-' in part:
-                try:
-                    start, end = map(int, part.split('-'))
-                    start = max(1, start)
-                    end = min(total_pages, end)
-                    if start <= end:
-                        selected_pages.update(range(start, end + 1))
-                except ValueError:
-                    return Response(
-                        {"success": False, "error": f"Invalid range format: '{part}'. Use '1-3'"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            else:
-                try:
-                    page = int(part)
-                    if 1 <= page <= total_pages:
-                        selected_pages.add(page)
-                except ValueError:
-                    return Response(
-                        {"success": False, "error": f"Invalid page number: '{part}'. Use numbers only"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-        if not selected_pages:
-            return Response(
-                {"success": False, "error": "No valid pages selected. Check range limits."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        logger.info(f"Extracting pages {sorted(selected_pages)} from {total_pages} total")
-
         writer = PyPDF2.PdfWriter()
-        for page_num in sorted(selected_pages):
-            writer.add_page(reader.pages[page_num - 1])
-
+        
+        if len(reader.pages) > 0:
+            writer.add_page(reader.pages[0])
+        
         output = BytesIO()
         writer.write(output)
         output.seek(0)
         
         response = HttpResponse(output.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="split_{pdf_file.name}"'
+        response['Content-Disposition'] = 'attachment; filename="split-page1.pdf"'
         return response
         
     except Exception as e:
@@ -318,7 +328,6 @@ def split_pdf(request):
         )
 
 
-@csrf_exempt
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -326,7 +335,7 @@ def image_compressor(request):
     """
     Compress uploaded images to reduce file size.
     Accepts: POST with 'images' (multiple image files)
-    Returns: JPEG blob on success
+    Returns: JSON success/error response
     """
     if request.method != 'POST':
         return Response(
@@ -335,7 +344,10 @@ def image_compressor(request):
         )
     
     # Get uploaded files
-    files = request.FILES.getlist('images') + request.FILES.getlist('files') + request.FILES.getlist('image') + request.FILES.getlist('file')
+    files = request.FILES.getlist('images')
+    files += request.FILES.getlist('files')
+    files += request.FILES.getlist('image')
+    files += request.FILES.getlist('file')
     
     # Validate files
     if not files:
@@ -349,33 +361,31 @@ def image_compressor(request):
     for f in files:
         if f.content_type not in allowed_image_types:
             return Response(
-                {"success": False, "error": f"Invalid file type: {f.content_type}"},
+                {"success": False, "error": f"Invalid file type: {f.content_type}. Only JPEG, PNG, GIF, WEBP allowed."},
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    # Get compression quality (default 80)
-    quality = int(request.POST.get('quality', 80))
+    # Get compression quality (optional parameter)
+    quality = int(request.data.get('quality', 80))
     quality = max(10, min(95, quality))
     
-    logger.info(f"image_compressor: Processing file with quality {quality}")
+    # Log the request (actual compression would be implemented here)
+    logger.info(f"image_compressor: Processing {len(files)} images with {quality} quality")
     
     try:
-        image_file = files[0]  # Single file for now
+        image_file = files[0]  # Single image for now
         image_file.seek(0)
         img = Image.open(image_file)
         
-        # Convert RGBA/P to RGB for JPEG
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
         
-        # Compress to JPEG
         output = BytesIO()
         img.save(output, format='JPEG', quality=quality, optimize=True)
         output.seek(0)
         
-        # Return blob
         response = HttpResponse(output.getvalue(), content_type='image/jpeg')
-        response['Content-Disposition'] = 'attachment; filename="compressed.jpg"'
+        response['Content-Disposition'] = f'attachment; filename="compressed.jpg"'
         return response
         
     except Exception as e:
@@ -390,62 +400,143 @@ def image_compressor(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def background_remover(request):
-    """
-    Remove background using rembg.
-    """
-    if request.method != "POST":
+    import requests
+    
+    if request.method != 'POST':
         return Response(
             {"success": False, "error": "Method not allowed. Use POST."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+    
+    # FE priority first, safe file access
+    image_file = request.FILES.get('file') or request.FILES.get('image')
 
-    # Get file
-    image_file = request.FILES.get("file") or request.FILES.get("image")
     if not image_file:
-        image_list = request.FILES.getlist("images") or request.FILES.getlist("files")
+        image_list = request.FILES.getlist('images') or request.FILES.getlist('files')
         image_file = image_list[0] if image_list else None
-
+    
+    # Validate file exists
     if not image_file:
+        logger.error("background_remover: No image file uploaded")
         return Response(
-            {"success": False, "error": "No image uploaded."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {"success": False, "error": "No image file uploaded. Please upload an image."},
+            status=status.HTTP_400_BAD_REQUEST
         )
-
-    # Validate
-    allowed_types = {"image/jpeg", "image/png", "image/jpg", "image/webp"}
-    if image_file.content_type not in allowed_types:
+    
+    # Validate file type
+    allowed_image_types = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
+    if image_file.content_type not in allowed_image_types:
+        logger.error(f"background_remover: Invalid file type - {image_file.content_type}")
         return Response(
-            {"success": False, "error": "Invalid image type."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {"success": False, "error": f"Invalid file type: {image_file.content_type}. Only JPEG, PNG, GIF, WEBP allowed."},
+            status=status.HTTP_400_BAD_REQUEST
         )
-
-    if image_file.size > 10 * 1024 * 1024:
+    
+    logger.info(f"background_remover: Processing image - {image_file.name}, size: {image_file.size}")
+    
+    # Get API key from Django settings
+    api_key = settings.REMOVE_BG_API_KEY
+    
+    if not api_key:
+        logger.error("background_remover: REMOVE_BG_API_KEY not configured")
         return Response(
-            {"success": False, "error": "File too large (max 10MB)."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {"success": False, "error": "Background removal service not configured. Please contact admin."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
-
-    logger.info(f"background_remover: Processing {image_file.name}")
-
+    
     try:
-        image_file.seek(0)
-        input_bytes = image_file.read()
-        output_bytes = remove(input_bytes)
-
-        if not output_bytes:
+        # Prepare the file for remove.bg API
+        # The API expects 'image_file' as the field name
+        files = {
+            'image_file': (image_file.name, image_file.read(), image_file.content_type)
+        }
+        
+        # API request headers
+        headers = {
+            'X-Api-Key': api_key
+        }
+        
+        # API payload
+        data = {
+            'size': 'auto',  # Options: 'auto', 'preview', 'full', '4k'
+            'format': 'png'
+        }
+        
+        logger.info("background_remover: Calling remove.bg API...")
+        
+        # Make request to remove.bg
+        response = requests.post(
+            'https://api.remove.bg/v1.0/removebg',
+            files=files,
+            data=data,
+            headers=headers,
+            timeout=60  # 60 seconds timeout
+        )
+        
+        # Log response status for debugging
+        logger.info(f"background_remover: remove.bg response status - {response.status_code}")
+        
+        # Handle API errors
+        if response.status_code == 402:
+            logger.error("background_remover: remove.bg API credits exhausted")
             return Response(
-                {"success": False, "error": "Background removal failed."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"success": False, "error": "Background removal service credits exhausted. Please contact admin."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
-
-        response = HttpResponse(output_bytes, content_type="image/png")
-        response["Content-Disposition"] = 'attachment; filename="no-bg.png"'
-        return response
-
-    except Exception as e:
-        logger.exception(f"background_remover error: {str(e)}")
+        
+        if response.status_code == 403:
+            logger.error("background_remover: Invalid API key")
+            return Response(
+                {"success": False, "error": "Background removal service authentication failed. Please contact admin."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        
+        if response.status_code == 429:
+            logger.error("background_remover: Rate limit exceeded")
+            return Response(
+                {"success": False, "error": "Too many requests. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
+        if not response.ok:
+            error_text = response.text
+            logger.error(f"background_remover: remove.bg API error - {error_text}")
+            return Response(
+                {"success": False, "error": f"Failed to remove background: {response.status_code}"},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+        
+        # Check if we got a valid image back
+        content_type = response.headers.get('content-type', '')
+        if 'image' not in content_type:
+            logger.error(f"background_remover: Invalid response content type - {content_type}")
+            return Response(
+                {"success": False, "error": "Invalid response from background removal service."},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+        
+        logger.info("background_remover: Background removed successfully!")
+        
+        # Return the processed image as a blob
+        from django.http import HttpResponse
+        return HttpResponse(response.content, content_type='image/png')
+        
+    except requests.exceptions.Timeout:
+        logger.error("background_remover: Request to remove.bg timed out")
         return Response(
-            {"success": False, "error": "Processing failed."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            {"success": False, "error": "Request timed out. Please try again with a smaller image."},
+            status=status.HTTP_504_GATEWAY_TIMEOUT
+        )
+    except requests.exceptions.ConnectionError:
+        logger.error("background_remover: Connection error to remove.bg API")
+        return Response(
+            {"success": False, "error": "Could not connect to background removal service. Please try again later."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    except Exception as e:
+        logger.exception(f"background_remover: Unexpected error - {str(e)}")
+        return Response(
+            {"success": False, "error": f"An unexpected error occurred: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 

@@ -155,7 +155,7 @@ export default function SplitPDFPage() {
       formData.append("file", file.file);
       formData.append("page_ranges", pageRanges);
 
-      // Send API request
+// Send API request
       const response = await API.post("/split-pdf/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

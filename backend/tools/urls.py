@@ -6,16 +6,26 @@ from .views import ToolViewSet, image_to_pdf, merge_pdf, split_pdf, image_compre
 router = DefaultRouter()
 router.register(r'tools', ToolViewSet, basename='tool')
 
-# Custom endpoints for file processing tools
 urlpatterns = [
-    # Router URLs for Tool model (GET/POST /api/tools/)
+    # Custom POST endpoints first - add tools/ prefix
+    path('tools/image-to-pdf/', image_to_pdf, name='image-to-pdf'),
+    path('tools/merge-pdf/', merge_pdf, name='merge-pdf'),
+    path('tools/split-pdf/', split_pdf, name='split-pdf'),
+    path('tools/image-compressor/', image_compressor, name='image-compressor'),
+    path('tools/background-remover/', background_remover, name='background-remover'),
+
+    # Router URLs after custom endpoints
     path('', include(router.urls)),
-    
-    # Custom POST endpoints for file-processing tools
-    path('image-to-pdf/', image_to_pdf, name='image-to-pdf'),
-    path('merge-pdf/', merge_pdf, name='merge-pdf'),
-    path('split-pdf/', split_pdf, name='split-pdf'),
-    path('image-compressor/', image_compressor, name='image-compressor'),
-    path('background-remover/', background_remover, name='background-remover'),
 ]
 
+# urlpatterns = [
+#     # Custom POST endpoints first
+#     path('image-to-pdf/', image_to_pdf, name='image-to-pdf'),
+#     path('merge-pdf/', merge_pdf, name='merge-pdf'),
+#     path('split-pdf/', split_pdf, name='split-pdf'),
+#     path('image-compressor/', image_compressor, name='image-compressor'),
+#     path('background-remover/', background_remover, name='background-remover'),
+
+#     # Router URLs after custom endpoints
+#     path('', include(router.urls)),
+# ]

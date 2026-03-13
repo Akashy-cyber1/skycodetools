@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import API, { isAxiosError } from "@/lib/api";
+// import API, { isAxiosError } from "@/lib/api";
 import {
   Upload,
   X,
@@ -102,53 +102,106 @@ export default function BackgroundRemoverPage() {
     setError(null);
 
     try {
+
       // Create FormData and append the image
       const formData = new FormData();
       formData.append("file", originalImage.file);
 
-      // Send API request to internal backend
-      const response = await API.post("/background-remover/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        responseType: "blob",
+      // Send request through Next.js proxy
+      const response = await fetch("/api/background-remover/", {
+        method: "POST",
+        body: formData,
       });
 
-      // Create blob URL for the processed image
-      const processedUrl = URL.createObjectURL(response.data);
+      if (!response.ok) {
+        let errorMessage = `Server error: ${response.status}. Please try again.`;
+
+        const contentType = response.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            // keep default error
+          }
+        } else {
+          try {
+            const errorText = await response.text();
+            if (errorText) errorMessage = errorText;
+          } catch {
+            // keep default error
+          }
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const processedUrl = URL.createObjectURL(blob);
       setProcessedImage(processedUrl);
     } catch (err) {
       console.error("Error removing background:", err);
-      if (isAxiosError(err)) {
-        if (err.response) {
-          // Try to parse error message from response
-          const status = err.response.status;
-          let errorMessage = `Server error: ${status}. Please try again.`;
-          
-          // Check if response is JSON (error details from backend)
-          const contentType = err.response.headers["content-type"];
-          if (contentType && contentType.includes("application/json")) {
-            try {
-              const errorData = JSON.parse(await (err.response.data as Blob).text());
-              errorMessage = errorData.error || errorData.message || errorMessage;
-            } catch {
-              // If parsing fails, use default message
-            }
-          }
-          
-          setError(errorMessage);
-        } else if (err.request) {
-          setError("Network error. Please check your connection and try again.");
-        } else {
-          setError("Failed to remove background. Please try again.");
-        }
+
+      if (err instanceof Error) {
+        setError(err.message || "Failed to remove background. Please try again.");
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
-    } finally {
+    }
+    finally {
       setIsProcessing(false);
     }
-  };
+  }
+  // //   // Create FormData and append the image
+  // //   // 
+  // //   // Create FormData and append the image
+  // //   const formData = new FormData();
+  // //   formData.append("file", originalImage.file);
+
+  // //   // Send API request to internal backend
+  // //   const response = await API.post("/background-remover/", formData, {
+  // //     headers: {
+  // //       "Content-Type": "multipart/form-data",
+  // //     },
+  // //     responseType: "blob",
+  // //   });
+
+  // //   // Create blob URL for the processed image
+  // //   const processedUrl = URL.createObjectURL(response.data);
+  // //   setProcessedImage(processedUrl);
+  // // } catch (err) {
+  //   console.error("Error removing background:", err);
+  //   if (isAxiosError(err)) {
+  //     if (err.response) {
+  //       // Try to parse error message from response
+  //       const status = err.response.status;
+  //       let errorMessage = `Server error: ${status}. Please try again.`;
+
+  //       // Check if response is JSON (error details from backend)
+  //       const contentType = err.response.headers["content-type"];
+  //       if (contentType && contentType.includes("application/json")) {
+  //         try {
+  //           const errorData = JSON.parse(await (err.response.data as Blob).text());
+  //           errorMessage = errorData.error || errorData.message || errorMessage;
+  //         } catch {
+  //           // If parsing fails, use default message
+  //         }
+  //       }
+
+  //       setError(errorMessage);
+  //     } else if (err.request) {
+  //       setError("Network error. Please check your connection and try again.");
+  //     } else {
+  //       setError("Failed to remove background. Please try again.");
+  //     }
+  //   } else {
+  //     setError("An unexpected error occurred. Please try again.");
+  //   }
+  // } finally {
+  //   setIsProcessing(false);
+  // }
+
 
   // Download processed image
   const downloadImage = () => {
@@ -251,10 +304,9 @@ export default function BackgroundRemoverPage() {
                       className={`
                         relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer
                         transition-colors duration-200
-                        ${
-                          isDragging
-                            ? "bg-blue-500/10 border-blue-500"
-                            : "bg-[#0f172a]/30 border-[#1e293b] hover:border-blue-500/50 hover:bg-[#0f172a]/50"
+                        ${isDragging
+                          ? "bg-blue-500/10 border-blue-500"
+                          : "bg-[#0f172a]/30 border-[#1e293b] hover:border-blue-500/50 hover:bg-[#0f172a]/50"
                         }
                       `}
                     >
@@ -273,14 +325,12 @@ export default function BackgroundRemoverPage() {
                         className="flex flex-col items-center"
                       >
                         <div
-                          className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4 ${
-                            isDragging ? "ring-4 ring-blue-500/30" : ""
-                          }`}
+                          className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4 ${isDragging ? "ring-4 ring-blue-500/30" : ""
+                            }`}
                         >
                           <Upload
-                            className={`w-10 h-10 ${
-                              isDragging ? "text-blue-400" : "text-slate-400"
-                            }`}
+                            className={`w-10 h-10 ${isDragging ? "text-blue-400" : "text-slate-400"
+                              }`}
                           />
                         </div>
 
@@ -399,11 +449,10 @@ export default function BackgroundRemoverPage() {
                         disabled={isProcessing}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${
-                          isProcessing
-                            ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
-                            : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-blue-500/25"
-                        }`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-semibold transition-all duration-200 ${isProcessing
+                          ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                          : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-blue-500/25"
+                          }`}
                       >
                         {isProcessing ? (
                           <>

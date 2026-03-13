@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 // GET handler for browser testing
 export async function GET() {
@@ -17,13 +17,15 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     
     // Forward the request to Django backend
-    const response = await fetch(`${DJANGO_API_URL}/api/merge-pdf/`, {
+    const djangoUrl = `${BACKEND_URL}/api/tools/merge-pdf/`;
+    const response = await fetch(djangoUrl, {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Proxy: Django error:", errorText);
       return NextResponse.json(
         { error: errorText || "Failed to merge PDFs" },
         { status: response.status }

@@ -95,7 +95,7 @@ export default function ImageToPDFPage() {
     setProgress(0);
   }, [images]);
 
-  // Convert images to PDF using API
+  // Convert images to PDF using proxy
   const convertToPDF = async () => {
     if (images.length === 0) return;
 
@@ -105,46 +105,28 @@ export default function ImageToPDFPage() {
     setError(null);
 
     try {
-      // Create FormData and append all images
       const formData = new FormData();
       images.forEach((image) => {
         formData.append("files", image.file);
       });
 
-      // Use fetch to call the Next.js proxy route (same origin)
-      // This proxies to Django backend at http://127.0.0.1:8000/api/image-to-pdf/
       const response = await fetch("/api/image-to-pdf/", {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        // Try to get error message from response
-        let errorMessage = `Server error: ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Response might not be JSON
-        }
-        throw new Error(errorMessage);
+        const errorText = await response.text();
+        throw new Error(errorText || `Server error: ${response.status}`);
       }
 
-      // Get the PDF blob
       const pdfBlob = await response.blob();
       const pdfUrl = URL.createObjectURL(pdfBlob);
       setConvertedPdf(pdfUrl);
-      setProgress(100);
     } catch (err) {
       console.error("Error converting to PDF:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      
-      // Check for backend unavailable error
-      if (errorMessage.includes("fetch") || errorMessage.includes("ECONNREFUSED") || errorMessage.includes("Failed to fetch")) {
-        setError("Backend server is not running. Please start the Django server or contact support.");
-      } else {
-        setError(`Failed to convert images to PDF: ${errorMessage}`);
-      }
+      setError(`Failed to convert images to PDF: ${errorMessage}`);
     } finally {
       setIsConverting(false);
     }
@@ -163,6 +145,7 @@ export default function ImageToPDFPage() {
   };
 
   return (
+    // ... rest of JSX unchanged from original
     <div className="min-h-screen bg-[#030712]">
       {/* Header */}
       <div className="relative overflow-hidden">
@@ -327,7 +310,7 @@ export default function ImageToPDFPage() {
                                 onClick={() => removeImage(image.id)}
                                 className="p-2 rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-colors"
                               >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
                           </div>

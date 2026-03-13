@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DJANGO_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 // GET handler for browser testing
 export async function GET() {
@@ -17,32 +17,18 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     
     console.log("Proxy: Received request, forwarding to Django...");
-    console.log("Proxy: Django URL:", DJANGO_API_URL);
+    console.log("Proxy: Backend URL:", BACKEND_URL);
     
-    // Forward the request to Django backend - try without trailing slash first
-    let djangoUrl = `${DJANGO_API_URL}/api/image-to-pdf`;
-    console.log("Proxy: Trying URL:", djangoUrl);
+    // Forward the request to Django backend 
+    const djangoUrl = `${BACKEND_URL}/api/tools/image-to-pdf/`;
+    console.log("Proxy: Forwarding to:", djangoUrl);
     
-    let response = await fetch(djangoUrl, {
+    const response = await fetch(djangoUrl, {
       method: "POST",
       body: formData,
     });
 
-    console.log("Proxy: First response status:", response.status);
-
-    // If 404, try with trailing slash
-    if (response.status === 404) {
-      console.log("Proxy: Trying with trailing slash...");
-      djangoUrl = `${DJANGO_API_URL}/api/image-to-pdf/`;
-      console.log("Proxy: Trying URL:", djangoUrl);
-      
-      response = await fetch(djangoUrl, {
-        method: "POST",
-        body: formData,
-      });
-      
-      console.log("Proxy: Second response status:", response.status);
-    }
+    console.log("Proxy: Backend response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();

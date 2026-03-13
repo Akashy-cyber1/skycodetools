@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DJANGO_API_URL = process.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 // GET handler for browser testing
 export async function GET() {
@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     
     // Forward the request to Django backend
-    const response = await fetch(`${DJANGO_API_URL}/api/background-remover/`, {
+    const djangoUrl = `${BACKEND_URL}/api/tools/background-remover/`;
+    const response = await fetch(djangoUrl, {
       method: "POST",
       body: formData,
     });
