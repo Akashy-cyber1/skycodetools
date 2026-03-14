@@ -9,7 +9,7 @@ from .serializers import ToolSerializer
 from io import BytesIO
 from django.conf import settings
 from PIL import Image
-from rembg import remove
+
 import PyPDF2
 import logging
 
@@ -393,6 +393,14 @@ def background_remover(request):
     """
     Remove background using rembg.
     """
+    try:
+        from rembg import remove
+    except ImportError:
+        return Response(
+            {"success": False, "error": "Background remover dependency is not installed on the server."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    
     if request.method != "POST":
         return Response(
             {"success": False, "error": "Method not allowed. Use POST."},
