@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+// const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL =
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 
 // GET handler for browser testing
 export async function GET() {
@@ -10,6 +14,8 @@ export async function GET() {
     note: "This endpoint is temporarily accepting GET for testing. Use POST for production."
   });
 }
+
+
 
 export async function POST(request: NextRequest) {
   try {
