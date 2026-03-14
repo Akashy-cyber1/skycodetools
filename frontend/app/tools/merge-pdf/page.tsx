@@ -231,10 +231,9 @@ export default function MergePDFPage() {
                 className={`
                   relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer
                   transition-colors duration-200 mb-6
-                  ${
-                    isDragging
-                      ? "bg-blue-500/10 border-blue-500"
-                      : "bg-[#0f172a]/30 border-[#1e293b] hover:border-blue-500/50 hover:bg-[#0f172a]/50"
+                  ${isDragging
+                    ? "bg-blue-500/10 border-blue-500"
+                    : "bg-[#0f172a]/30 border-[#1e293b] hover:border-blue-500/50 hover:bg-[#0f172a]/50"
                   }
                 `}
               >
@@ -252,14 +251,12 @@ export default function MergePDFPage() {
                   className="flex flex-col items-center"
                 >
                   <div
-                    className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4 ${
-                      isDragging ? "ring-4 ring-blue-500/30" : ""
-                    }`}
+                    className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4 ${isDragging ? "ring-4 ring-blue-500/30" : ""
+                      }`}
                   >
                     <Upload
-                      className={`w-10 h-10 ${
-                        isDragging ? "text-blue-400" : "text-slate-400"
-                      }`}
+                      className={`w-10 h-10 ${isDragging ? "text-blue-400" : "text-slate-400"
+                        }`}
                     />
                   </div>
 
@@ -401,10 +398,9 @@ export default function MergePDFPage() {
                   className={`
                     flex-1 flex items-center justify-center gap-2 py-4 px-6 rounded-xl font-semibold
                     transition-all duration-200
-                    ${
-                      files.length === 0 || isMerging
-                        ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-blue-500/25"
+                    ${files.length === 0 || isMerging
+                      ? "bg-slate-700/50 text-slate-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-blue-500/25"
                     }
                   `}
                 >

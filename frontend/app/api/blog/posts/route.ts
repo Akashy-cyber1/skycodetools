@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-export async function GET(request: NextRequest, { params }: { params: { slug?: string } }) {
+export async function GET(request: NextRequest)  {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
   const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   let url = `${BACKEND_URL}/api/blog/posts/`;
-  if (params?.slug) {
-    url += params.slug + '/';
-  } else if (category) {
-    url += `?category=${encodeURIComponent(category)}`;
-  }
+  if (category) {
+  url += `?category=${encodeURIComponent(category)}`;
+}
   console.log('[PROXY DEBUG posts] Building URL:', url);
   try {
     const backendRes = await fetch(url, { cache: 'no-store' });

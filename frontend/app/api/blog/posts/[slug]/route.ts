@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-  const url = `${BACKEND_URL}/api/blog/posts/${params.slug}/`;
+  // const url = `${BACKEND_URL}/api/blog/posts/${params.slug}/`;
+  const url = `${BACKEND_URL}/api/blog/posts/${slug}/`;
   console.log('[PROXY DEBUG slug] URL:', url);
   try {
     const res = await fetch(url);
