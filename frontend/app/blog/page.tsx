@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import BlogFilterClient from '@/components/blog/BlogFilterClient';
-import { getAllPosts, getAllCategories } from '@/config/blog';
+
 import { fetchAllPosts, fetchCategories } from '@/lib/api/blog';
+export const dynamic = 'force-dynamic';
+
 
 export const metadata: Metadata = {
   title: 'SkyCode Tools Blog - Tutorials, Tips & Updates',

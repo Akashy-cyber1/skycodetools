@@ -12,12 +12,17 @@ import { getAllPosts, getPostBySlug, getAllCategories as getStaticCategories } f
 // };
 const getApiUrl = (path: string): string => {
   const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+  process.env.BACKEND_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 
   // Server-side: use backend URL directly
   if (typeof window === "undefined") {
-    return `${backendUrl}/api/blog/${path}`;
+  if (!backendUrl) {
+    throw new Error("BACKEND_URL is not configured for server-side blog fetch");
   }
+  return `${backendUrl}/api/blog/${path}`;
+}
 
   // Client-side: use Next.js proxy route
   return `/api/blog/${path}`;
@@ -88,7 +93,7 @@ export async function fetchAllPosts(category?: string): Promise<BlogPost[]> {
     const path = category ? `posts/?category=${encodeURIComponent(category)}` : 'posts/';
     console.log('[API DEBUG] Using URL:', getApiUrl(path));
     const res = await fetchWithTimeout(getApiUrl(path), {
-      next: { revalidate: 3600 },
+      
       cache: 'no-store',
     }, 5000);
     
@@ -118,7 +123,7 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     console.log('[API DEBUG SLUG] Using URL:', getApiUrl(`posts/${slug}/`));
     const res = await fetchWithTimeout(getApiUrl(`posts/${slug}/`), {
-      next: { revalidate: 3600 },
+      
     });
     if (!res.ok) throw new Error('Not found');
     const raw: RawApiPost = await res.json();
@@ -133,7 +138,7 @@ export async function fetchCategories(): Promise<string[]> {
   try {
     console.log('[API DEBUG CAT] Using URL:', getApiUrl('categories/'));
     const res = await fetchWithTimeout(getApiUrl('categories/'), {
-      next: { revalidate: 86400 },
+      
     });
     if (!res.ok) throw new Error('Categories fetch failed');
     const raw = await res.json();
