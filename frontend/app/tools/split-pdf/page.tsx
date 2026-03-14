@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import API, { isAxiosError } from "@/lib/api";
+import API, { isAxiosError } from "@/lib/http";
 import {
   Upload,
   X,

@@ -197,7 +197,7 @@ export function useFileUploadWithProgress({
       });
 
       // Make API call with progress tracking
-      const api = (await import('@/lib/api')).default;
+      const api = (await import('@/lib/http')).default;
       
       const res = await api.post(apiEndpoint, formData, {
         headers: {
